@@ -57,10 +57,7 @@ bool q_insert_head(struct list_head *head, char *s)
 
     strncpy(new_node->value, s, strlen(s) + 1);
 
-    new_node->list.next = head->next;
-    head->next->prev = &new_node->list;
-    head->next = &new_node->list;
-    new_node->list.prev = head;
+    list_add(&new_node->list, head);
     return true;
 }
 
@@ -82,10 +79,7 @@ bool q_insert_tail(struct list_head *head, char *s)
 
     strncpy(new_node->value, s, strlen(s) + 1);
 
-    new_node->list.prev = head->prev;
-    head->prev->next = &new_node->list;
-    head->prev = &new_node->list;
-    new_node->list.next = head;
+    list_add_tail(&new_node->list, head);
     return true;
 }
 
@@ -98,8 +92,7 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
     strncpy(sp, removed->value, bufsize);
     sp[bufsize - 1] = '\0';
 
-    removed->list.prev->next = removed->list.next;
-    removed->list.next->prev = removed->list.prev;
+    list_del(&removed->list);
     return removed;
 }
 
@@ -112,8 +105,7 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
     strncpy(sp, removed->value, bufsize);
     sp[bufsize - 1] = '\0';
 
-    removed->list.prev->next = removed->list.next;
-    removed->list.next->prev = removed->list.prev;
+    list_del(&removed->list);
     return removed;
 }
 
