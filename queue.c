@@ -187,8 +187,67 @@ void q_reverseK(struct list_head *head, int k)
     // https://leetcode.com/problems/reverse-nodes-in-k-group/
 }
 
+/* Merge two sorted list into one, the two parameters point to the first element
+ */
+struct list_head *merge_list(struct list_head *l1,
+                             struct list_head *l2,
+                             bool descend)
+{
+    struct list_head *head = NULL, **ptr = &head, **node;
+    for (node = NULL; l1 && l2; *node = (*node)->next) {
+        node = ((strcmp(list_entry(l1, element_t, list)->value,
+                        list_entry(l2, element_t, list)->value) < 0) ^
+                descend)
+                   ? &l1
+                   : &l2;
+        *ptr = *node;
+        ptr = &(*ptr)->next;
+    }
+    if (l1)
+        *ptr = l1;
+    else
+        *ptr = l2;
+    return head;
+}
+
+/* Mergesort function for q_sort, head points to the first element of the
+ * to be sorted list
+ */
+struct list_head *sort_list(struct list_head *head, bool descend)
+{
+    if (!head || !head->next)
+        return head;
+    // Find mid node
+    struct list_head *mid, *slow = head, *fast = head;
+    while (fast->next && fast->next->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    mid = slow->next;
+    slow->next = NULL;
+    struct list_head *left = sort_list(head, descend),
+                     *right = sort_list(mid, descend);
+    return merge_list(left, right, descend);
+}
+
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head))
+        return;
+    // Convert list into singly linked list
+    head->prev->next = NULL;
+    head->next = sort_list(head->next, descend);
+    // Rebuild prev links
+    struct list_head *prev = NULL, *curr = head;
+    while (curr) {
+        curr->prev = prev;
+        prev = curr;
+        curr = curr->next;
+    }
+    head->prev = prev;
+    prev->next = head;
+}
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
