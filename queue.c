@@ -87,8 +87,10 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
     if (!head || head == head->next)
         return NULL;
     element_t *removed = list_entry(head->next, element_t, list);
-    strncpy(sp, removed->value, bufsize);
-    sp[bufsize - 1] = '\0';
+    if (sp) {
+        strncpy(sp, removed->value, bufsize);
+        sp[bufsize - 1] = '\0';
+    }
 
     list_del(&removed->list);
     return removed;
@@ -100,8 +102,10 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
     if (!head || head == head->next)
         return NULL;
     element_t *removed = list_entry(head->prev, element_t, list);
-    strncpy(sp, removed->value, bufsize);
-    sp[bufsize - 1] = '\0';
+    if (sp) {
+        strncpy(sp, removed->value, bufsize);
+        sp[bufsize - 1] = '\0';
+    }
 
     list_del(&removed->list);
     return removed;
@@ -253,7 +257,8 @@ void q_reverseK(struct list_head *head, int k)
     }
 }
 
-/* Merge two sorted list into one, the two parameters point to the first element
+/* Merge two sorted list into one, the two parameters point to the first
+ * element
  */
 struct list_head *merge_list(struct list_head *l1,
                              struct list_head *l2,
@@ -343,8 +348,8 @@ int q_ascend(struct list_head *head)
     return i;
 }
 
-/* Remove every node which has a node with a strictly greater value anywhere to
- * the right side of it */
+/* Remove every node which has a node with a strictly greater value anywhere
+ * to the right side of it */
 int q_descend(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
@@ -371,8 +376,8 @@ int q_descend(struct list_head *head)
     return i;
 }
 
-/* Merge all the queues into one sorted queue, which is in ascending/descending
- * order */
+/* Merge all the queues into one sorted queue, which is in
+ * ascending/descending order */
 int q_merge(struct list_head *head, bool descend)
 {
     // https://leetcode.com/problems/merge-k-sorted-lists/
