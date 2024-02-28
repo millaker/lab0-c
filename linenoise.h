@@ -44,6 +44,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include <web.h>
 
 typedef struct {
     size_t len;
@@ -72,6 +73,9 @@ void line_clear_screen(void);
 void line_set_multi_line(int ml);
 void line_mask_mode_enable(void);
 void line_mask_mode_disable(void);
+
+extern int web_fd;
+extern int web_enabled;
 #ifdef __cplusplus
 }
 #endif

@@ -940,6 +940,25 @@ static int line_edit(int stdin_fd,
      */
     line_history_add("");
 
+    // Construct readfds for select
+    int nfds = 0;
+
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(l.ifd, &readfds);
+
+    if (web_enabled && web_fd != -1) {
+        FD_SET(web_fd, &readfds);
+    }
+
+    if (l.ifd >= nfds) {
+        nfds = l.ifd + 1;
+    }
+
+    if (web_fd >= nfds) {
+        nfds = web_fd + 1;
+    }
+
     if (write(l.ofd, prompt, l.plen) == -1)
         return -1;
     while (1) {
