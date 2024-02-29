@@ -416,3 +416,35 @@ int q_merge(struct list_head *head, bool descend)
 
     return count;
 }
+
+static inline void list_swap(struct list_head *a, struct list_head *b)
+{
+    struct list_head *pos = b;
+    list_del(b);
+    // Replace a with b
+    b->next = a->next;
+    b->next->prev = b;
+    b->prev = a->prev;
+    b->prev->next = b;
+    if (pos == a)
+        pos = b;
+    list_add(a, pos);
+}
+
+void q_shuffle(struct list_head *head)
+{
+    if (!head || list_empty(head))
+        return;
+    struct list_head *curr = head->next;
+    int size = q_size(head);
+    while (size > 1) {
+        int num = rand() % size--;
+        struct list_head *target, *next_temp = curr->next;
+        for (target = curr; num > 0; target = target->next, num--)
+            ;
+        if (curr != target)
+            list_swap(curr, target);
+        if (next_temp != target)
+            curr = next_temp;
+    }
+}
