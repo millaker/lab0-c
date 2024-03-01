@@ -9,7 +9,7 @@ if len(args) != 2:
 
 infile = args[1]
 # Create all possibilities
-string = "12345"
+string = "123"
 outfile = infile.split('.')[0]
 
 perm = permutations(string)
@@ -32,6 +32,6 @@ plt.xlabel('Permutations')
 plt.ylabel('Count')
 plt.title('Count of Permutations')
 plt.xticks([])
-plt.xlim(labels[0], labels[-1])
+plt.xlim(-0.5, len(labels)-0.5)
 plt.tight_layout()
 plt.savefig(outfile + '.png')
