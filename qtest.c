@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
 #include <spawn.h>
@@ -1044,6 +1045,44 @@ static bool do_shuffle(int argc, char *argv[])
     return q_show(0);
 }
 
+static bool do_shuffle_random_test(int argc, char *argv[])
+{
+    FILE *outfile = NULL;
+    if (argc != 3) {
+        report(3, "%s requires two arguments", argv[0]);
+        return false;
+    }
+    outfile = fopen(argv[1], "w");
+    if (!outfile) {
+        report(3, "Error: %s can't open file", argv[0]);
+        return false;
+    }
+    int test_size = atoi(argv[2]);
+    for (int i = 0; i < test_size; i++) {
+        struct list_head *temp = q_new();
+        q_insert_tail(temp, "1");
+        q_insert_tail(temp, "2");
+        q_insert_tail(temp, "3");
+        q_insert_tail(temp, "4");
+        q_insert_tail(temp, "5");
+
+        q_shuffle(temp);
+
+        // Dump shuffle result to output file
+        element_t *entry;
+        list_for_each_entry (entry, temp, list) {
+            fprintf(outfile, "%s", entry->value);
+        }
+        fprintf(outfile, "\n");
+        fflush(outfile);
+        if (i + 1 % 1000 == 0)
+            printf("Progress (%d/%d)\n", i, test_size);
+        q_free(temp);
+    }
+    fclose(outfile);
+    return true;
+}
+
 static void console_init()
 {
     ADD_COMMAND(new, "Create new queue", "");
@@ -1085,6 +1124,9 @@ static void console_init()
     ADD_COMMAND(reverseK, "Reverse the nodes of the queue 'K' at a time",
                 "[K]");
     ADD_COMMAND(shuffle, "Shuffle the nodes in the current queue", "");
+    ADD_COMMAND(shuffle_random_test,
+                "Do shuffle N times repeatedly and dump result to file",
+                "[file] [N]");
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);
     add_param("malloc", &fail_probability, "Malloc failure probability percent",
