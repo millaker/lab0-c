@@ -419,7 +419,7 @@ int q_merge(struct list_head *head, bool descend)
 
 static inline void list_swap(struct list_head *a, struct list_head *b)
 {
-    struct list_head *pos = b;
+    struct list_head *pos = b->prev;
     list_del(b);
     // Replace a with b
     b->next = a->next;

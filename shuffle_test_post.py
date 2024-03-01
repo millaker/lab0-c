@@ -9,7 +9,7 @@ if len(args) != 2:
 
 infile = args[1]
 # Create all possibilities
-string = "123"
+string = "12345"
 outfile = infile.split('.')[0]
 
 perm = permutations(string)
