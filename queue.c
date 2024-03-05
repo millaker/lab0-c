@@ -449,6 +449,9 @@ void q_shuffle(struct list_head *head)
     }
 }
 
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
 static struct list_head *merge(bool (*cmp)(struct list_head *,
                                            struct list_head *,
                                            bool),
@@ -516,7 +519,7 @@ static void merge_final(bool (*cmp)(struct list_head *,
     /* Finish linking remainder of list b on to tail */
     tail->next = b;
     do {
-        if (!++count)
+        if (unlikely(!++count))
             cmp(b, b, descend);
         b->prev = tail;
         tail = b;
@@ -549,7 +552,7 @@ void list_sort(struct list_head *head,
         for (bits = count; bits & 1; bits >>= 1)
             tail = &(*tail)->prev;
         /* Do the indicated merge */
-        if (bits) {
+        if (likely(bits)) {
             struct list_head *a = *tail, *b = a->prev;
 
             a = merge(cmp, b, a, descend);
