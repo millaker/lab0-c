@@ -391,8 +391,7 @@ static bool do_time(int argc, char *argv[])
     return ok;
 }
 
-int web_fd;
-int web_enabled;
+static int web_fd;
 
 static bool do_web(int argc, char *argv[])
 {
@@ -406,7 +405,6 @@ static bool do_web(int argc, char *argv[])
     if (web_fd > 0) {
         printf("listen on port %d, fd is %d\n", port, web_fd);
         line_set_eventmux_callback(web_eventmux);
-        web_enabled = true;
     } else {
         perror("ERROR");
         exit(web_fd);
