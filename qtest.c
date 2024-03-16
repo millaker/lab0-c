@@ -25,9 +25,11 @@
 #include "random.h"
 
 /* linux list sort*/
-void list_sort(struct list_head *head,
-               bool (*cmp)(struct list_head *, struct list_head *, bool),
-               bool descend);
+void list_sort(
+    void *priv,
+    struct list_head *head,
+    bool (*cmp)(void *priv, struct list_head *, struct list_head *, bool),
+    bool descend);
 
 /* Shannon entropy */
 extern double shannon_entropy(const uint8_t *input_data);
@@ -1088,8 +1090,10 @@ static bool do_shuffle_random_test(int argc, char *argv[])
     return true;
 }
 
-bool cmp(struct list_head *a, struct list_head *b, bool descend)
+bool cmp(void *priv, struct list_head *a, struct list_head *b, bool descend)
 {
+    if (priv)
+        priv++;
     element_t *a_entry = list_entry(a, element_t, list);
     element_t *b_entry = list_entry(b, element_t, list);
     return (strcmp(a_entry->value, b_entry->value) > 0) ^ descend;
@@ -1115,7 +1119,7 @@ static bool do_linux_list_sort(int argc, char *argv[])
 
     set_noallocate_mode(true);
     if (current && exception_setup(false))
-        list_sort(current->q, &cmp, descend);
+        list_sort(NULL, current->q, &cmp, descend);
     exception_cancel();
     set_noallocate_mode(false);
 

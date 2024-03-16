@@ -452,18 +452,18 @@ void q_shuffle(struct list_head *head)
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-static struct list_head *merge(bool (*cmp)(struct list_head *,
-                                           struct list_head *,
-                                           bool),
-                               struct list_head *a,
-                               struct list_head *b,
-                               bool descend)
+static struct list_head *merge(
+    void *priv,
+    bool (*cmp)(void *priv, struct list_head *, struct list_head *, bool),
+    struct list_head *a,
+    struct list_head *b,
+    bool descend)
 {
     struct list_head *head = NULL, **tail = &head;
 
     for (;;) {
         /* if equal, take 'a' -- important for sort stability */
-        if (!cmp(a, b, descend)) {
+        if (!cmp(priv, a, b, descend)) {
             *tail = a;
             tail = &a->next;
             a = a->next;
@@ -484,20 +484,20 @@ static struct list_head *merge(bool (*cmp)(struct list_head *,
     return head;
 }
 
-static void merge_final(bool (*cmp)(struct list_head *,
-                                    struct list_head *,
-                                    bool),
-                        struct list_head *head,
-                        struct list_head *a,
-                        struct list_head *b,
-                        bool descend)
+static void merge_final(
+    void *priv,
+    bool (*cmp)(void *priv, struct list_head *, struct list_head *, bool),
+    struct list_head *head,
+    struct list_head *a,
+    struct list_head *b,
+    bool descend)
 {
     struct list_head *tail = head;
     size_t count = 0;
 
     for (;;) {
         /* if equal, take 'a' -- important for sort stability */
-        if (!cmp(a, b, descend)) {
+        if (!cmp(priv, a, b, descend)) {
             tail->next = a;
             a->prev = tail;
             tail = a;
@@ -520,7 +520,7 @@ static void merge_final(bool (*cmp)(struct list_head *,
     tail->next = b;
     do {
         if (unlikely(!++count))
-            cmp(b, b, descend);
+            cmp(priv, b, b, descend);
         b->prev = tail;
         tail = b;
         b = b->next;
@@ -531,9 +531,11 @@ static void merge_final(bool (*cmp)(struct list_head *,
     head->prev = tail;
 }
 
-void list_sort(struct list_head *head,
-               bool (*cmp)(struct list_head *, struct list_head *, bool),
-               bool descend)
+void list_sort(
+    void *priv,
+    struct list_head *head,
+    bool (*cmp)(void *priv, struct list_head *, struct list_head *, bool),
+    bool descend)
 {
     struct list_head *list = head->next, *pending = NULL;
     size_t count = 0; /* Count of pending */
@@ -555,7 +557,7 @@ void list_sort(struct list_head *head,
         if (likely(bits)) {
             struct list_head *a = *tail, *b = a->prev;
 
-            a = merge(cmp, b, a, descend);
+            a = merge(priv, cmp, b, a, descend);
             /* Install the merged result in place of the inputs */
             a->prev = b->prev;
             *tail = a;
@@ -577,9 +579,9 @@ void list_sort(struct list_head *head,
 
         if (!next)
             break;
-        list = merge(cmp, pending, list, descend);
+        list = merge(priv, cmp, pending, list, descend);
         pending = next;
     }
     /* The final merge, rebuilding prev links */
-    merge_final(cmp, head, pending, list, descend);
+    merge_final(priv, cmp, head, pending, list, descend);
 }
