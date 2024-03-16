@@ -1145,6 +1145,129 @@ static bool do_linux_list_sort(int argc, char *argv[])
     return ok && !error_check();
 }
 
+typedef enum {
+    RAND = 1,
+    DESCEND,
+    ASCEND,
+    RAND3,
+    RAND10TAIL,
+    ASCEND_RAND,
+    DUP,
+    SAME,
+    WORSTCASE
+} PATTERN;
+/* Prepare data for sorting */
+/*
+    Pattern
+    1. *sort: All random data
+    2. \sort: descending data
+    3. /sort: ascending data
+    4. 3sort: ascending, then 3 random exchanges
+    5. +sort: ascending, then 10 random at the end
+    6. %sort: ascending, then randomly replace 1% of elements with random values
+    7. ~sort: many duplicates
+    8. =sort: all equal
+    9. !sort: worst case scenario
+*/
+static struct list_head *prep_data(int pattern, int size)
+{
+    if (!size)
+        return NULL;
+    struct list_head *temp = q_new();
+    INIT_LIST_HEAD(temp);
+    char str_buf[MAX_RANDSTR_LEN];
+    if (pattern == RAND) {
+        for (int i = 0; i < size; i++) {
+            fill_rand_string(str_buf, sizeof(str_buf));
+            q_insert_head(temp, str_buf);
+        }
+    } else if (pattern == DESCEND) {
+        for (int i = 0; i < size; i++) {
+            fill_rand_string(str_buf, sizeof(str_buf));
+            q_insert_head(temp, str_buf);
+        }
+        q_sort(temp, 1);
+    } else if (pattern == ASCEND) {
+        for (int i = 0; i < size; i++) {
+            fill_rand_string(str_buf, sizeof(str_buf));
+            q_insert_head(temp, str_buf);
+        }
+        q_sort(temp, 0);
+    } else if (pattern == RAND3) {
+        if (size < 2) {
+            printf("Too few element to make 3 random");
+            return NULL;
+        }
+        /* 3 random */
+        for (int i = 0; i < size; i++) {
+            fill_rand_string(str_buf, sizeof(str_buf));
+            q_insert_head(temp, str_buf);
+        }
+        q_sort(temp, 0);
+        assert(size >= 3);
+        struct list_head *curr = temp, *prev = NULL, *prevprev = NULL;
+        for (int i = 0; i < size; i += 3) {
+            /* iterate to next 3 */
+            for (int j = 0; j < 3; j++) {
+                prevprev = prev;
+                prev = curr;
+                curr = curr->next;
+            }
+            element_t *e[3] = {list_entry(prevprev, element_t, list),
+                               list_entry(prev, element_t, list),
+                               list_entry(curr, element_t, list)};
+            int idx0 = rand() % 3, idx1 = rand() % 3;
+            char *temp = e[idx0]->value;
+            e[idx0]->value = e[idx1]->value;
+            e[idx1]->value = temp;
+        }
+    } else if (pattern == RAND10TAIL) {
+        for (int i = 0; i < (size - 10); i++) {
+            fill_rand_string(str_buf, sizeof(str_buf));
+            q_insert_head(temp, str_buf);
+        }
+        q_sort(temp, 0);
+        for (int i = 0; i < 10; i++) {
+            fill_rand_string(str_buf, sizeof(str_buf));
+            q_insert_tail(temp, str_buf);
+        }
+    } else if (pattern == ASCEND_RAND) {
+        int rand_size = size * 0.01;
+        for (int i = 0; i < size; i++) {
+            fill_rand_string(str_buf, sizeof(str_buf));
+            q_insert_head(temp, str_buf);
+        }
+        q_sort(temp, 0);
+        while (rand_size--) {
+            // replace 1% node with random data
+            int l = q_size(temp);
+            int target = rand() % l;
+            struct list_head *curr = temp->next;
+            while (target--) {
+                curr = curr->next;
+            }
+            element_t *ent = list_entry(curr, element_t, list);
+            free(ent->value);
+            ent->value = malloc(sizeof(str_buf));
+            fill_rand_string(ent->value, sizeof(str_buf));
+        }
+    } else if (pattern == DUP) {
+        char *dup_str[4] = {"abcde", "bcdef", "cdefg", "defgh"};
+        for (int i = 0; i < size; i++) {
+            q_insert_tail(temp, dup_str[i % 4]);
+        }
+    } else if (pattern == SAME) {
+        char *same_str = "Jacob";
+        for (int i = 0; i < size; i++) {
+            q_insert_tail(temp, same_str);
+        }
+    } else {
+        printf("Wrong pattern input\n");
+        return NULL;
+    }
+    return temp;
+}
+
 static void console_init()
 {
     ADD_COMMAND(new, "Create new queue", "");
