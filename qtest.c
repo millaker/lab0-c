@@ -1098,7 +1098,7 @@ static bool do_shuffle_random_test(int argc, char *argv[])
 bool cmp(void *priv, struct list_head *a, struct list_head *b, bool descend)
 {
     if (priv)
-        priv++;
+        *((unsigned long long *) priv) += 1;
     element_t *a_entry = list_entry(a, element_t, list);
     element_t *b_entry = list_entry(b, element_t, list);
     return (strcmp(a_entry->value, b_entry->value) > 0) ^ descend;
