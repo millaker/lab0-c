@@ -1326,6 +1326,46 @@ static struct list_head *prep_data(int pattern, int size)
     return temp;
 }
 
+/* The output stats will be written to sort.log
+   with format [Type] [pattern] [size] [time] [comparisons]
+*/
+
+static bool do_sorttest(int argc, char *argv[])
+{
+    FILE *fd = fopen("sort.log", "w");
+    // Cycle thorugh all patterns
+    for (int pattern = RAND; pattern < WORSTCASE; pattern++) {
+        for (int size = 20; size < 10000; size++) {
+            for (int j = 0; j < 3; j++) {
+                unsigned long long cmp_count = 0;
+                unsigned long long tbegin, tend, telapse;
+                struct list_head *temp_q = prep_data(pattern, size);
+
+                tbegin = clock();
+                list_sort(&cmp_count, temp_q, &cmp, 0);
+                tend = clock();
+                telapse = tend - tbegin;
+                fprintf(fd, "Merge %d %d %lld %lld\n", pattern, size, telapse,
+                        cmp_count);
+                q_free(temp_q);
+
+                cmp_count = 0;
+                temp_q = prep_data(pattern, size);
+                tbegin = clock();
+                timsort(&cmp_count, temp_q, &cmp);
+                tend = clock();
+                telapse = tend - tbegin;
+                fprintf(fd, "Tim %d %d %lld %lld\n", pattern, size, telapse,
+                        cmp_count);
+                q_free(temp_q);
+            }
+        }
+        printf("Pattern %d/%d\n", pattern, WORSTCASE);
+    }
+    fclose(fd);
+    return true;
+}
+
 static void console_init()
 {
     ADD_COMMAND(new, "Create new queue", "");
@@ -1371,6 +1411,7 @@ static void console_init()
                 "Do shuffle N times repeatedly and dump result to file",
                 "[file] [N]");
     ADD_COMMAND(linux_list_sort, "Do linux list_sort.c merge sort", "");
+    ADD_COMMAND(sorttest, "Do sorting test", "");
     ADD_COMMAND(timsort, "Do Timsort", "");
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);
