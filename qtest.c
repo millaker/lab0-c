@@ -24,12 +24,17 @@
 #include "list.h"
 #include "random.h"
 
+typedef bool (*list_cmp_func_t)(void *,
+                                struct list_head *,
+                                struct list_head *,
+                                bool);
 /* linux list sort*/
-void list_sort(
-    void *priv,
-    struct list_head *head,
-    bool (*cmp)(void *priv, struct list_head *, struct list_head *, bool),
-    bool descend);
+void list_sort(void *priv,
+               struct list_head *head,
+               list_cmp_func_t cmp,
+               bool descend);
+
+void timsort(void *priv, struct list_head *head, list_cmp_func_t cmp);
 
 /* Shannon entropy */
 extern double shannon_entropy(const uint8_t *input_data);
@@ -1149,6 +1154,55 @@ static bool do_linux_list_sort(int argc, char *argv[])
     return ok && !error_check();
 }
 
+static bool do_timsort(int argc, char *argv[])
+{
+    if (argc != 1) {
+        report(1, "%s takes no arguments", argv[0]);
+        return false;
+    }
+
+    int cnt = 0;
+    if (!current || !current->q)
+        report(3, "Warning: Calling sort on null queue");
+    else
+        cnt = q_size(current->q);
+    error_check();
+
+    if (cnt < 2)
+        report(3, "Warning: Calling sort on single node");
+    error_check();
+
+    set_noallocate_mode(true);
+    if (current && exception_setup(false))
+        timsort(NULL, current->q, &cmp);
+    exception_cancel();
+    set_noallocate_mode(false);
+
+    bool ok = true;
+    if (current && current->size) {
+        for (struct list_head *cur_l = current->q->next;
+             cur_l != current->q && --cnt; cur_l = cur_l->next) {
+            /* Ensure each element in ascending/descending order */
+            element_t *item, *next_item;
+            item = list_entry(cur_l, element_t, list);
+            next_item = list_entry(cur_l->next, element_t, list);
+            if (!descend && strcmp(item->value, next_item->value) > 0) {
+                report(1, "ERROR: Not sorted in ascending order");
+                ok = false;
+                break;
+            }
+
+            if (descend && strcmp(item->value, next_item->value) < 0) {
+                report(1, "ERROR: Not sorted in descending order");
+                ok = false;
+                break;
+            }
+        }
+    }
+
+    q_show(3);
+    return ok && !error_check();
+}
 typedef enum {
     RAND = 1,
     DESCEND,
@@ -1317,6 +1371,7 @@ static void console_init()
                 "Do shuffle N times repeatedly and dump result to file",
                 "[file] [N]");
     ADD_COMMAND(linux_list_sort, "Do linux list_sort.c merge sort", "");
+    ADD_COMMAND(timsort, "Do Timsort", "");
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);
     add_param("malloc", &fail_probability, "Malloc failure probability percent",
