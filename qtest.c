@@ -1358,7 +1358,7 @@ static struct list_head *prep_data(int pattern, int size)
    5. output log file
 */
 
-static bool do_sorttest(int argc, char *argv[])
+static bool do_sorttestL(int argc, char *argv[])
 {
     if (argc != 6) {
         report(1, "%s takes 5 arguments", argv[0]);
@@ -1404,7 +1404,6 @@ static bool do_sorttest(int argc, char *argv[])
         report(1, "%s: Cannot open log file %s", argv[0], fn);
         return false;
     }
-    // Cycle thorugh all patterns
     for (int s = 20; s < size; s += step) {
         for (int j = 0; j < iteration; j++) {
             unsigned long long cmp_count = 0;
@@ -1430,6 +1429,61 @@ static bool do_sorttest(int argc, char *argv[])
             q_free(temp_q);
         }
     }
+    fclose(fd);
+    return true;
+}
+
+static bool do_sorttest(int argc, char *argv[])
+{
+    if (argc != 4) {
+        report(1, "%s takes 3 arguments", argv[0]);
+        return false;
+    }
+    int pattern = atoi(argv[1]);
+    int size = atoi(argv[2]);
+    char *fn = argv[3];
+
+    if (pattern < RAND || pattern >= WORSTCASE) {
+        report(1, "%s: unknown pattern %d", argv[0], pattern);
+        report(1, "%s: pattern set to default 1", argv[0]);
+        pattern = RAND;
+    }
+
+    if (size > 100000) {
+        report(1, "Warning: %s size larger than 100,000 may have long run time",
+               argv[0]);
+    }
+
+    if (size <= 20) {
+        report(1, "%s: size %d too small", argv[0], size);
+        report(1, "%s: size set to default 10000", argv[0]);
+        size = 10000;
+    }
+
+    FILE *fd = fopen(fn, "w");
+    if (!fd) {
+        report(1, "%s: Cannot open log file %s", argv[0], fn);
+        return false;
+    }
+    unsigned long long cmp_count = 0;
+    unsigned long long tbegin, tend, telapse;
+    struct list_head *temp_q = prep_data(pattern, size);
+
+    tbegin = clock();
+    list_sort(&cmp_count, temp_q, &cmp, 0);
+    tend = clock();
+    telapse = tend - tbegin;
+    fprintf(fd, "Merge %d %d %lld %lld\n", pattern, size, telapse, cmp_count);
+    q_free(temp_q);
+
+    cmp_count = 0;
+    temp_q = prep_data(pattern, size);
+    tbegin = clock();
+    timsort(&cmp_count, temp_q, &cmp);
+    tend = clock();
+    telapse = tend - tbegin;
+    fprintf(fd, "Tim %d %d %lld %lld\n", pattern, size, telapse, cmp_count);
+    q_free(temp_q);
     fclose(fd);
     return true;
 }
@@ -1479,6 +1533,7 @@ static void console_init()
                 "Do shuffle N times repeatedly and dump result to file",
                 "[file] [N]");
     ADD_COMMAND(linux_list_sort, "Do linux list_sort.c merge sort", "");
+    ADD_COMMAND(sorttestL, "Do sorting test loop", "");
     ADD_COMMAND(sorttest, "Do sorting test", "");
     ADD_COMMAND(timsort, "Do Timsort", "");
     add_param("length", &string_length, "Maximum length of displayed string",
