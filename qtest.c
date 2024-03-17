@@ -1270,7 +1270,7 @@ static struct list_head *prep_data(int pattern, int size)
         q_sort(temp, 0);
         assert(size >= 3);
         struct list_head *curr = temp, *prev = NULL, *prevprev = NULL;
-        for (int i = 0; i < size; i += 3) {
+        for (int i = 0; (i + 3) < size; i += 3) {
             /* iterate to next 3 */
             for (int j = 0; j < 3; j++) {
                 prevprev = prev;
