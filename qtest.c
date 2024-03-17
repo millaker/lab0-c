@@ -1326,41 +1326,89 @@ static struct list_head *prep_data(int pattern, int size)
     return temp;
 }
 
-/* The output stats will be written to sort.log
+/*
+   The output stats will be written to sort.log
    with format [Type] [pattern] [size] [time] [comparisons]
+
+   Specify the following parameter:
+   1. pattern
+   2. step
+   3. size
+   4. iteration per size
+   5. output log file
 */
 
 static bool do_sorttest(int argc, char *argv[])
 {
-    FILE *fd = fopen("sort.log", "w");
+    if (argc != 6) {
+        report(1, "%s takes 5 arguments", argv[0]);
+        return false;
+    }
+    int pattern = atoi(argv[1]);
+    int step = atoi(argv[2]);
+    int size = atoi(argv[3]);
+    int iteration = atoi(argv[4]);
+    char *fn = argv[5];
+
+    if (pattern < RAND || pattern >= WORSTCASE) {
+        report(1, "%s: unknown pattern %d", argv[0], pattern);
+        report(1, "%s: pattern set to default 1", argv[0]);
+        pattern = RAND;
+    }
+
+    if (!step) {
+        report(1, "%s: step must be positive", argv[0]);
+        report(1, "%s: step set to default 1", argv[0]);
+        step = 1;
+    }
+
+    if (size > 100000) {
+        report(1, "Warning: %s size larger than 100,000 may have long run time",
+               argv[0]);
+    }
+
+    if (size <= 20) {
+        report(1, "%s: size %d too small", argv[0], size);
+        report(1, "%s: size set to default 10000", argv[0]);
+        size = 10000;
+    }
+
+    if (iteration <= 0) {
+        report(1, "%s: iteration %d must be positive", argv[0], iteration);
+        report(1, "%s: iteration set to default 1", argv[0]);
+        iteration = 1;
+    }
+
+    FILE *fd = fopen(fn, "w");
+    if (!fd) {
+        report(1, "%s: Cannot open log file %s", argv[0], fn);
+        return false;
+    }
     // Cycle thorugh all patterns
-    for (int pattern = RAND; pattern < WORSTCASE; pattern++) {
-        for (int size = 20; size < 10000; size++) {
-            for (int j = 0; j < 3; j++) {
-                unsigned long long cmp_count = 0;
-                unsigned long long tbegin, tend, telapse;
-                struct list_head *temp_q = prep_data(pattern, size);
+    for (int s = 20; s < size; s += step) {
+        for (int j = 0; j < iteration; j++) {
+            unsigned long long cmp_count = 0;
+            unsigned long long tbegin, tend, telapse;
+            struct list_head *temp_q = prep_data(pattern, s);
 
-                tbegin = clock();
-                list_sort(&cmp_count, temp_q, &cmp, 0);
-                tend = clock();
-                telapse = tend - tbegin;
-                fprintf(fd, "Merge %d %d %lld %lld\n", pattern, size, telapse,
-                        cmp_count);
-                q_free(temp_q);
+            tbegin = clock();
+            list_sort(&cmp_count, temp_q, &cmp, 0);
+            tend = clock();
+            telapse = tend - tbegin;
+            fprintf(fd, "Merge %d %d %lld %lld\n", pattern, s, telapse,
+                    cmp_count);
+            q_free(temp_q);
 
-                cmp_count = 0;
-                temp_q = prep_data(pattern, size);
-                tbegin = clock();
-                timsort(&cmp_count, temp_q, &cmp);
-                tend = clock();
-                telapse = tend - tbegin;
-                fprintf(fd, "Tim %d %d %lld %lld\n", pattern, size, telapse,
-                        cmp_count);
-                q_free(temp_q);
-            }
+            cmp_count = 0;
+            temp_q = prep_data(pattern, s);
+            tbegin = clock();
+            timsort(&cmp_count, temp_q, &cmp);
+            tend = clock();
+            telapse = tend - tbegin;
+            fprintf(fd, "Tim %d %d %lld %lld\n", pattern, s, telapse,
+                    cmp_count);
+            q_free(temp_q);
         }
-        printf("Pattern %d/%d\n", pattern, WORSTCASE);
     }
     fclose(fd);
     return true;
