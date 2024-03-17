@@ -1203,6 +1203,12 @@ static bool do_timsort(int argc, char *argv[])
     q_show(3);
     return ok && !error_check();
 }
+
+int qsort_cmp(const void *a, const void *b)
+{
+    return (*(int *) a - *(int *) b);
+}
+
 typedef enum {
     RAND = 1,
     DESCEND,
@@ -1296,19 +1302,33 @@ static struct list_head *prep_data(int pattern, int size)
             q_insert_head(temp, str_buf);
         }
         q_sort(temp, 0);
-        while (rand_size--) {
-            // replace 1% node with random data
-            int l = q_size(temp);
-            int target = rand() % l;
-            struct list_head *curr = temp->next;
-            while (target--) {
-                curr = curr->next;
-            }
-            element_t *ent = list_entry(curr, element_t, list);
-            free(ent->value);
-            ent->value = malloc(sizeof(str_buf));
-            fill_rand_string(ent->value, sizeof(str_buf));
+        // Generates unique random numbers
+        int *rand_idx = malloc(sizeof(int) * rand_size);
+        unsigned char *is_used = malloc(sizeof(*is_used) * size);
+        for (int im = 0, in = size - rand_size; in < size && im < rand_size;
+             in++) {
+            int r = rand() % (in + 1);
+            if (is_used[r])
+                r = in;
+            rand_idx[im++] = r;
+            is_used[r] = 1;
         }
+        free(is_used);
+        qsort(rand_idx, rand_size, sizeof(int), qsort_cmp);
+
+        // replace 1% node with random data
+        struct list_head *curr = temp->next;
+        int target_idx = 0, node = 0;
+        while (target_idx < rand_size) {
+            if (node == rand_idx[target_idx]) {
+                element_t *ent = list_entry(curr, element_t, list);
+                fill_rand_string(ent->value, strlen(ent->value) + 1);
+                target_idx++;
+            }
+            node++;
+            curr = curr->next;
+        }
+        free(rand_idx);
     } else if (pattern == DUP) {
         char *dup_str[4] = {"abcde", "bcdef", "cdefg", "defgh"};
         for (int i = 0; i < size; i++) {
