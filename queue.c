@@ -230,6 +230,7 @@ void q_reverseK(struct list_head *head, int k)
     if (!head || list_empty(head) || list_is_singular(head))
         return;
     LIST_HEAD(temp_head);
+    INIT_LIST_HEAD(&temp_head);
     struct list_head *reverse_first = head->next;
     struct list_head *curr = head->next;
     int i = k - 1;
@@ -237,18 +238,9 @@ void q_reverseK(struct list_head *head, int k)
         if (!i) {
             // Store prev and next
             struct list_head *prev = reverse_first->prev, *next = curr->next;
-            // Attach to temp head
-            temp_head.next = reverse_first;
-            temp_head.prev = curr;
-            reverse_first->prev = &temp_head;
-            curr->next = &temp_head;
+            list_cut_position(&temp_head, prev, curr);
             q_reverse(&temp_head);
-            // Rebuild link
-            temp_head.next->prev = prev;
-            temp_head.prev->next = next;
-            prev->next = temp_head.next;
-            next->prev = temp_head.prev;
-            // Restore vars
+            list_splice_init(&temp_head, prev);
             i = k - 1;
             reverse_first = next;
             curr = next;
