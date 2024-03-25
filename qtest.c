@@ -40,6 +40,9 @@ void timsort(void *priv, struct list_head *head, list_cmp_func_t cmp);
 extern double shannon_entropy(const uint8_t *input_data);
 extern int show_entropy;
 
+/* PRNG option */
+extern int prng;
+
 /* Our program needs to use regular malloc/free */
 #define INTERNAL 1
 #include "harness.h"
@@ -187,7 +190,11 @@ static void fill_rand_string(char *buf, size_t buf_size)
         len = rand() % buf_size;
 
     uint64_t randstr_buf_64[MAX_RANDSTR_LEN] = {0};
-    randombytes((uint8_t *) randstr_buf_64, len * sizeof(uint64_t));
+    if (prng == 1)
+        randombytes_xorshift((uint8_t *) randstr_buf_64,
+                             len * sizeof(uint64_t));
+    else
+        randombytes((uint8_t *) randstr_buf_64, len * sizeof(uint64_t));
     for (size_t n = 0; n < len; n++)
         buf[n] = charset[randstr_buf_64[n] % (sizeof(charset) - 1)];
 

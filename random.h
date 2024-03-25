@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 extern int randombytes(uint8_t *buf, size_t len);
+extern int randombytes_xorshift(uint8_t *buf, size_t n);
 
 static inline uint8_t randombit(void)
 {

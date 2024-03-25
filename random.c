@@ -293,3 +293,28 @@ int randombytes(uint8_t *buf, size_t n)
 #error "randombytes(...) is not supported on this platform"
 #endif
 }
+
+static uint32_t xorshift32()
+{
+    /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
+    static uint32_t x = 1;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    return x;
+}
+
+static uint32_t xorshift8()
+{
+    return xorshift32() & 0xFF;
+}
+
+int randombytes_xorshift(uint8_t *buf, size_t n)
+{
+    while (n > 0) {
+        *buf = xorshift8();
+        buf++;
+        n--;
+    }
+    return 0;
+}
