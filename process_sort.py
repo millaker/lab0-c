@@ -12,6 +12,16 @@ class Stats:
     time: list[int]
     cmps: list[int]
 
+def plt_wrap(xticks, yticks, plot_name, file_name):
+    ax = plt.gca()
+    ax.set_xticks(xticks)
+    ax.set_yticks(yticks)
+    plt.xticks(rotation=30)
+    plt.title(plot_name)
+    plt.legend()
+    plt.savefig(file_name)
+    plt.close()
+
 # Parse log file and return result lists for each type
 # Returns a dictionary with type name as key and Stats
 def process_file(file_name):
@@ -50,14 +60,7 @@ def __plot(x, y, x_name, y_name, label, plot_name, file_name):
     plt.scatter(x, y, label=label, marker='+', s=15, alpha=0.8)
     plt.xlabel(x_name)
     plt.ylabel(y_name)
-    ax = plt.gca()
-    ax.set_xticks(xticks)
-    ax.set_yticks(yticks)
-    plt.xticks(rotation=30)
-    plt.title(plot_name)
-    plt.legend()
-    plt.savefig(file_name)
-    plt.close()
+    plt_wrap(xticks, yticks, plot_name, file_name)
 
 def __plot_mixed(x, data, y_name, data_name, plot_name, file_name):
     # Draw mixed figure
@@ -76,14 +79,26 @@ def __plot_mixed(x, data, y_name, data_name, plot_name, file_name):
     # Set labels and title
     plt.xlabel('Size')
     plt.ylabel(y_name)
-    ax = plt.gca()
-    ax.set_xticks(xticks)
-    ax.set_yticks(yticks)
-    plt.xticks(rotation=30)
-    plt.title(plot_name)
-    plt.legend()
-    plt.savefig(file_name)
-    plt.close()
+    plt_wrap(xticks, yticks, plot_name, file_name)
+
+def __plot_aggregate(data, plot_name, file_name):
+    plt.figure(figsize=(10,6))
+    max = -1
+    for size, cmps, _, pattern in data:
+        plt.scatter(size, cmps, label=pattern_dict[int(pattern)], marker='+', s=15, alpha=1)
+        temp = np.max(cmps)
+        if temp > max:
+            max = temp
+    xticks = np.arange(0, 12000, 1000)
+    y_max = max
+    step_size = 100
+    while y_max / step_size > 10:
+        step_size *= 10
+    yticks = np.arange(0, y_max + step_size, step_size)
+    # Set labels and title
+    plt.xlabel('Size')
+    plt.ylabel('Comparisons')
+    plt_wrap(xticks, yticks, plot_name, file_name)
 
 def plot(result):
     # Iterate through all sorting
@@ -91,6 +106,7 @@ def plot(result):
     nameL = []
     timeL = []
     cmpsL = [] 
+    dataL_dict = {'Tim':[], 'Merge':[]} 
     for d in result:
         data=result[d]
         plt.figure()
@@ -103,6 +119,7 @@ def plot(result):
         timeL.append(time)
         cmpsL.append(cmps)
         nameL.append(data.name)
+        dataL_dict[d].append((size, cmps, time, pattern))
 
         __plot(size, time, "Size", "Time", d, \
                f'{data.name}sort {pattern_dict[int(pattern)]} -- Time', \
@@ -116,17 +133,31 @@ def plot(result):
     __plot_mixed(size, cmpsL, 'Size', nameL, \
                 f'Mixed {pattern_dict[int(pattern)]} -- Comparisons', \
                 prefix + '/../plots/' + f'Mixed_{pattern}_cmps.png')
+    return (dataL_dict['Tim'], dataL_dict['Merge'])
+    
 
 if __name__ == "__main__":
     if(len(sys.argv) < 2):
         print(f"Usage: python {sys.argv[0]} input_file1 input_file2 ...")
         sys.exit()
     input_files = sys.argv[1:]
+    TimAll = []
+    MergeAll = []
     for i in input_files:
         prefix = os.path.dirname(i)
         result = process_file(i)
         print(f'Plotting {i}...')
-        plot(result)
+        a,b = plot(result)
+        TimAll += a
+        MergeAll += b
+
+    print('Plotting aggregate ...')
+    __plot_aggregate(TimAll, \
+                     f'Timsort all patterns -- Comparisons', \
+                     prefix + '/../plots/' + f'Timsort_all_cmps.png')
+    __plot_aggregate(MergeAll, \
+                     f'Mergesort all patterns -- Comparisons', \
+                     prefix + '/../plots/' + f'Mergesort_all_cmps.png')
 
 
 
