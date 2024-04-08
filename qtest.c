@@ -24,6 +24,9 @@
 #include "list.h"
 #include "random.h"
 
+// ttt related includes
+#include "ttt.h"
+
 typedef bool (*list_cmp_func_t)(void *,
                                 struct list_head *,
                                 struct list_head *,
@@ -1495,6 +1498,12 @@ static bool do_sorttest(int argc, char *argv[])
     return true;
 }
 
+static bool do_ttt(int argc, char *argv[])
+{
+    ttt_entry();
+    return true;
+}
+
 static void console_init()
 {
     ADD_COMMAND(new, "Create new queue", "");
@@ -1543,6 +1552,7 @@ static void console_init()
     ADD_COMMAND(sorttestL, "Do sorting test loop", "");
     ADD_COMMAND(sorttest, "Do sorting test", "");
     ADD_COMMAND(timsort, "Do Timsort", "");
+    ADD_COMMAND(ttt, "Do ttt game", "");
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);
     add_param("malloc", &fail_probability, "Malloc failure probability percent",
