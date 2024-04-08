@@ -588,6 +588,7 @@ static int cmd_select(int nfds,
             fflush(stdout);
             prompt_flag = true;
         } else if (infd != STDIN_FILENO) {
+            set_echo(0);
             char *cmdline = readline();
             if (cmdline)
                 interpret_cmd(cmdline);
