@@ -91,7 +91,7 @@ static int get_input(char player)
 
 int ttt_entry()
 {
-    srand(time(NULL));
+    move_count = 0;
     char table[N_GRIDS];
     memset(table, ' ', N_GRIDS);
     char turn = 'X';
