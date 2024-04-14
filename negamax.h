@@ -6,3 +6,4 @@ typedef struct {
 
 void negamax_init();
 move_t negamax_predict(char *table, char player);
+void negamax_free();

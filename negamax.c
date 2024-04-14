@@ -88,6 +88,11 @@ void negamax_init()
     hash_value = 0;
 }
 
+void negamax_free()
+{
+    zobrist_destroy_table();
+}
+
 move_t negamax_predict(char *table, char player)
 {
     memset(history_score_sum, 0, sizeof(history_score_sum));
