@@ -1,5 +1,5 @@
 #ifndef TTT_H
 #define TTT_H
-
-int ttt_entry();
+#include <stdbool.h>
+bool ttt_entry(int mode, int limit);
 #endif

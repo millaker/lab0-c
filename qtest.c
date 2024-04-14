@@ -46,6 +46,9 @@ extern int show_entropy;
 /* PRNG option */
 extern int prng;
 
+/* ttt options */
+int ttt_mode;
+
 /* Our program needs to use regular malloc/free */
 #define INTERNAL 1
 #include "harness.h"
@@ -1500,7 +1503,17 @@ static bool do_sorttest(int argc, char *argv[])
 
 static bool do_ttt(int argc, char *argv[])
 {
-    ttt_entry();
+    int limit = 5;
+    if (ttt_mode == 1 && argc == 2) {
+        if (!get_int(argv[1], &limit)) {
+            report(1, "Invalid number of K");
+            return false;
+        }
+    } else if (ttt_mode) {
+        report(1, "No simulation count limit specified, defaults to 5");
+    }
+
+    ttt_entry(!!ttt_mode, limit);
     return true;
 }
 
@@ -1552,7 +1565,7 @@ static void console_init()
     ADD_COMMAND(sorttestL, "Do sorting test loop", "");
     ADD_COMMAND(sorttest, "Do sorting test", "");
     ADD_COMMAND(timsort, "Do Timsort", "");
-    ADD_COMMAND(ttt, "Do ttt game", "");
+    ADD_COMMAND(ttt, "Do ttt game", "[N]");
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);
     add_param("malloc", &fail_probability, "Malloc failure probability percent",
@@ -1561,6 +1574,7 @@ static void console_init()
               "Number of times allow queue operations to return false", NULL);
     add_param("descend", &descend,
               "Sort and merge queue in ascending/descending order", NULL);
+    add_param("ttt_mode", &ttt_mode, "Toggle between ttt modes(0 or 1)", NULL);
 }
 
 /* Signal handlers */
