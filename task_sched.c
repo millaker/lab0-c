@@ -59,13 +59,14 @@ static LIST_HEAD(task_reap);
 void task_init(void)
 {
     INIT_LIST_HEAD(&task_main.list);
+    INIT_LIST_HEAD(&task_reap);
     task_current = &task_main;
 }
 
 static struct task_struct *task_alloc(task_callback_t *func, void *arg)
 {
     struct task_struct *task = calloc(1, sizeof(*task));
-    task->stack = calloc(1, 1 << 20);
+    task->stack = calloc(1, 1 << 25);
     task->callback = func;
     task->arg = arg;
     return task;
